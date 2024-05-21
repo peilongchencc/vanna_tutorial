@@ -426,3 +426,11 @@ The following columns are in the university_major_information table in the def d
 经看源码，发现匹配最相似的ddl和doc时用的都是question和ddl、doc的向量匹配，就感觉离谱。但可能这种也能匹配出结果吧。🚨<br>
 
 `question_sql_list` 这个变量只在 `get_followup_questions_prompt` 用到了也感觉挺离谱的，正儿八经生成SQL时竟然没参考这个，不得其解。<br>
+
+检索时匹配的内容时前10:<br>
+
+```python
+self.n_results_sql = config.get("n_results_sql", config.get("n_results", 10))
+self.n_results_documentation = config.get("n_results_documentation", config.get("n_results", 10))
+self.n_results_ddl = config.get("n_results_ddl", config.get("n_results", 10))
+```

@@ -53,5 +53,6 @@ logger.info(f"train后的vn为:\n{vn}")
 training_data = vn.get_training_data()
 logger.info(f"训练数据为:\n{training_data}")
 
-vn_rtn = vn.ask(question="请列出每所大学及其专业的名称、研究方向以及录取人数。")
+# 查询数据,但不进行绘图。
+vn_rtn = vn.ask(question="请列出每所大学及其专业的名称、研究方向以及录取人数。", visualize=False)
 logger.info(f"查询结果为:\n{vn_rtn}")

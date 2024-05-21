@@ -15,6 +15,7 @@
       - [generate\_sql模块:](#generate_sql模块)
     - [System Message](#system-message)
     - [User Message](#user-message)
+  - [完整prompt:](#完整prompt)
 
 ## 依赖项安装:
 
@@ -367,3 +368,61 @@ ON a.university_name = b.university_name AND a.major = b.major;
 ```
 
 
+## 完整prompt:
+
+如果将所有内容都传入，即:<br>
+
+```python
+# `vn.train(...)` 跳转的结果
+vn.get_sql_prompt(
+    question="What are the top 10 customers by sales?",
+    question_sql_list=[{"question": "What are the top 10 customers by sales?", "sql": "SELECT * FROM customers ORDER BY sales DESC LIMIT 10"}],
+    ddl_list=["CREATE TABLE customers (id INT, name TEXT, sales DECIMAL)"],
+    doc_list=["The customers table contains information about customers and their sales."],
+)
+```
+
+则完整prompt为:<br>
+
+```log
+You are a SQL expert. Please help to generate a SQL query to answer the question. Your response should ONLY be based on the given context and follow the response guidelines and format instructions.  
+
+===Tables 
+
+CREATE TABLE ...(相似度检索到的ddl语句)
+
+===Additional Context 
+
+The following columns are in the university_admission_information table in the def database:
+
+|    | TABLE_CATALOG   | TABLE_SCHEMA   | TABLE_NAME                       | COLUMN_NAME             | DATA_TYPE   | COLUMN_COMMENT   |
+|---:|:----------------|:---------------|:---------------------------------|:------------------------|:------------|:-----------------|
+|  0 | def             | irmdata        | university_admission_information | id                      | int         |                  |
+|  1 | def             | irmdata        | university_admission_information | university_name         | varchar     | 大学名称             |
+|  2 | def             | irmdata        | university_admission_information | major                   | varchar     | 专业名称             |
+|  3 | def             | irmdata        | university_admission_information | num_of_major_admissions | int         | 专业招生人数           |
+|  4 | def             | irmdata        | university_admission_information | create_time             | timestamp   | 创建时间             |
+|  5 | def             | irmdata        | university_admission_information | update_time             | timestamp   | 修改时间             |
+
+The following columns are in the university_major_information table in the def database:
+
+|    | TABLE_CATALOG   | TABLE_SCHEMA   | TABLE_NAME                   | COLUMN_NAME        | DATA_TYPE   | COLUMN_COMMENT   |
+|---:|:----------------|:---------------|:-----------------------------|:-------------------|:------------|:-----------------|
+|  6 | def             | irmdata        | university_major_information | id                 | int         |                  |
+|  7 | def             | irmdata        | university_major_information | university_name    | varchar     | 大学名称             |
+|  8 | def             | irmdata        | university_major_information | major              | varchar     | 专业名称             |
+|  9 | def             | irmdata        | university_major_information | research_direction | varchar     | 研究方向             |
+| 10 | def             | irmdata        | university_major_information | create_time        | timestamp   | 创建时间             |
+| 11 | def             | irmdata        | university_major_information | update_time        | timestamp   | 修改时间             |
+
+===Response Guidelines 
+1. If the provided context is sufficient, please generate a valid SQL query without any explanations for the question. 
+2. If the provided context is almost sufficient but requires knowledge of a specific string in a particular column, please generate an intermediate SQL query to find the distinct strings in that column. Prepend the query with a comment saying intermediate_sql 
+3. If the provided context is insufficient, please explain why it can't be generated. 
+4. Please use the most relevant table(s). 
+5. If the question has been asked and answered before, please repeat the answer exactly as it was given before.
+```
+
+经看源码，发现匹配最相似的ddl和doc时用的都是question和ddl、doc的向量匹配，就感觉离谱。但可能这种也能匹配出结果吧。🚨<br>
+
+`question_sql_list` 这个变量只在 `get_followup_questions_prompt` 用到了也感觉挺离谱的，正儿八经生成SQL时竟然没参考这个，不得其解。<br>
